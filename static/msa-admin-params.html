@@ -1,0 +1,67 @@
+<link rel="import" href="/msa/msa.html"></link>
+<style>
+msa-admin-params .updated {
+	background-color: yellow
+}
+</style>
+<template id="msa-admin-params">
+	<h1>Params</h1>
+	<p><table class="params">
+		<thead><td>Key</td><td>Value</td></thead>
+	</table></p>
+	<p><button class="update">Update</button></div>
+</template>
+<script>
+(function() {
+
+	// methods
+	var paramsMethods = {}
+	paramsMethods.init = function() {
+		this.Q('button.update').onclick = () => this.updateParams()
+		this.listParams()
+	}
+	paramsMethods.sync = function() {
+		const t = this.Q("table.params")
+		for(let param of this.params){
+			const r = t.insertRow()
+			r.insertCell().textContent = param.key
+			const c = r.insertCell()
+			c.textContent = param.value
+			c.setAttribute('contenteditable', true)
+			c.oninput = () => {
+				r.classList.add('updated')
+			}
+		}
+	}
+	paramsMethods.listParams = function() {
+		Msa.get('/admin/params/list', params => {
+			this.params = params
+			this.sync()
+		})
+	}
+	paramsMethods.updateParams = function() {
+		const updatedRows = this.querySelectorAll(".updated")
+		for(let r of updatedRows){
+			const cells = r.cells
+			Msa.post('/admin/params', { body: {
+				key: cells[0].textContent,
+				value: cells[1].textContent
+			}})
+		}
+	}
+
+	// register elements
+	Msa.registerElement("msa-admin-params", {
+		template: "#msa-admin-params",
+		oncreate: function() {
+			this.Q = Msa.Q
+			Object.assign(this, paramsMethods)
+			this.params = []
+		},
+		onattach: function() {
+			this.init()
+		}
+	})
+
+})()
+</script>
