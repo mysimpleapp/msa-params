@@ -1,7 +1,7 @@
 const { ParamsDb } = require("./db")
 const msaAdmin = Msa.require("admin")
 
-const msaAdminParams = module.exports = Msa.module()
+const msaAdminParams = module.exports = new Msa.Module()
 
 msaAdminParams.app.get('/', (req, res) => res.sendPage({ wel:'/params/msa-params-admin.js' }))
 
