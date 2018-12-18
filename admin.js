@@ -14,7 +14,7 @@ msaAdminParams.app.get('/list', async (req, res, next) => {
 
 msaAdminParams.app.post('/', (req, res, next) => {
 	const { key, value } = req.body
-	Msa.setParam(key, value)
+	Msa.setParam(key, JSON.parse(value))
 	res.sendStatus(200)
 })
 

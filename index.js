@@ -11,39 +11,37 @@ require("./admin")
 
 // param desc
 
-msaParams.ParamDesc = class extends Msa.ParamDesc {}
-const ParamDescPt = msaParams.ParamDesc.prototype
+msaParams.ParamDef = class extends Msa.ParamDef {
+	init() {
+		const dbVal = Msa.msaParamsStartDbVals[this.key]
+		if(dbVal !== undefined)
+			this.set(this.parse(dbVal), { save: false })
+		else
+			super.init()
+	}
+}
+const ParamDefPt = msaParams.ParamDef.prototype
 
-ParamDescPt.save = function() {
-	ParamDescSaveStack = ParamDescSaveStack.then(() => {
-		return new Promise( async (ok, ko) => {
+ParamDefPt.save = function() {
+	ParamDefSaveStack = ParamDefSaveStack.then(() => {
+		return new Promise(async (ok, ko) => {
 			try {
 				await ParamsDb.upsert({
 					key: this.key,
-					value: Msa.getParam(this.key)
+					value: this.format(this.val)
 				})
 			} catch(err) { return ko(err) }
 			ok()
 		})
 	})
 }
-var ParamDescSaveStack = Promise.resolve()
+let ParamDefSaveStack = Promise.resolve()
 
-
-// register ///////////
-
-msaParams.registerParam  = function(arg1, arg2){
-	const targ1 = typeof arg1
-	if(targ1 == "string")
-		_registerParam(arg1, arg2)
-	else if(targ1 == "object")
-		for(let key in arg1)
-			_registerParam(key, arg1[key])
+ParamDefPt.format = function(val) {
+	return JSON.stringify(val)
 }
-const _registerParam = function(key, desc){
-	Msa.paramsDescs[key] = new msaParams.ParamDesc(key, desc)
-	const val = Msa.getParam(key)
-	if(val === undefined && desc.defVal !== undefined)
-		Msa.setParam(key, desc.defVal)
+
+ParamDefPt.parse = function(val) {
+	return JSON.parse(val)
 }
 
