@@ -11,7 +11,7 @@ require("./admin")
 
 // param desc
 
-msaParams.ParamDef = class extends Msa.ParamDef {
+msaParams.Param = class extends Msa.Param {
 	init() {
 		const dbVal = Msa.msaParamsStartDbVals[this.key]
 		if(dbVal !== undefined)
@@ -20,10 +20,10 @@ msaParams.ParamDef = class extends Msa.ParamDef {
 			super.init()
 	}
 }
-const ParamDefPt = msaParams.ParamDef.prototype
+const ParamPt = msaParams.Param.prototype
 
-ParamDefPt.save = function() {
-	ParamDefSaveStack = ParamDefSaveStack.then(() => {
+ParamPt.save = function() {
+	ParamSaveStack = ParamSaveStack.then(() => {
 		return new Promise(async (ok, ko) => {
 			try {
 				await ParamsDb.upsert({
@@ -35,13 +35,24 @@ ParamDefPt.save = function() {
 		})
 	})
 }
-let ParamDefSaveStack = Promise.resolve()
+let ParamSaveStack = Promise.resolve()
 
-ParamDefPt.format = function(val) {
+ParamPt.format = function(val) {
 	return JSON.stringify(val)
 }
 
-ParamDefPt.parse = function(val) {
+ParamPt.parse = function(val) {
 	return JSON.parse(val)
 }
 
+
+// ParamStr //////////////////////////////
+
+msaParams.ParamStr = class extends msaParams.Param {
+	format(val) {
+		return val
+	}
+	parse(val) {
+		return val
+	}
+}

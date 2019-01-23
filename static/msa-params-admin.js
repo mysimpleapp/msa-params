@@ -1,11 +1,16 @@
-import { Q, importHtml, ajax } from "/msa/msa.js"
+import { Q, importHtml, importOnCall, ajax } from "/msa/msa.js"
+
+// dynamic imports
+const popupDeps = `
+	<script type="module" src="/utils/msa-utils-popup.js"></script>`
+const createInputPopup = importOnCall(popupDeps, "MsaUtils.createInputPopup")
 
 importHtml(`<style>
-	msa-admin-params {
+	msa-params-admin {
 		padding: 20px;
 	}
-	msa-admin-params .updated {
-		background-color: yellow
+	msa-params-admin .updated {
+		background-color: yellow;
 	}
 </style>`)
 
@@ -23,6 +28,7 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		super()
 		this.Q = Q
 		this.params = []
+		this.updatedParams = []
 	}
 
 	connectedCallback() {
@@ -43,13 +49,33 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		const t = this.Q("table.params tbody")
 		for(let param of this.params){
 			const r = t.insertRow()
+			r.param = param
 			r.insertCell().textContent = param.key
 			const c = r.insertCell()
 			c.textContent = param.value
-			c.setAttribute('contenteditable', true)
-			c.oninput = () => {
-				r.classList.add('updated')
+			if(param.editable) this.makeParamEditable(r)
+		}
+	}
+
+	makeParamEditable(r) {
+		const c = r.insertCell()
+		const b = document.createElement("button")
+		b.textContent = "Edit"
+		c.appendChild(b)
+		b.onclick = () => {
+			const param = r.param
+			let editor = param.editor
+			if(!editor) editor = "text"
+			if(typeof editor === "string") {
+				createInputPopup("Update param value",
+					{ type: editor, value: param.value },
+					newVal => {
+						this.updatedParams.push({ param: param, newVal: newVal })
+						r.cells[1].textContent = newVal
+						r.classList.add('updated')
+					})
 			}
+			param.editor
 		}
 	}
 
@@ -61,13 +87,14 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 	}
 
 	updateParams() {
-		const updatedRows = this.querySelectorAll(".updated")
-		for(let r of updatedRows){
-			const cells = r.cells
-			ajax('POST', '/admin/params', { body: {
-				key: cells[0].textContent,
-				value: cells[1].textContent
-			}})
+		for(let u of this.updatedParams){
+			const param = u.param
+			ajax('POST', '/admin/params',
+				{ body: {
+					key: param.key,
+					value: u.newVal
+				}},
+				() => location.reload())
 		}
 	}
 }

@@ -5,16 +5,26 @@ const msaAdminParams = module.exports = new Msa.Module()
 
 msaAdminParams.app.get('/', (req, res) => res.sendPage({ wel:'/params/msa-params-admin.js' }))
 
-msaAdminParams.app.get('/list', async (req, res, next) => {
-	try {
-		const users = await ParamsDb.findAll()
-		res.json(users.map(p => ({ key:p.key, value:p.value })))
-	} catch(err) { next(err) }
+msaAdminParams.app.get('/list', (req, res, next) => {
+  try {
+    const list = []
+    const defs = Msa.paramDefs
+    for(let k in defs) {
+      let val = null
+      try {
+        const def = defs[k]
+        val = def.format ? def.format(def.val) : JSON.stringify(Msa.getParam(k))
+      } catch(err) {}
+      list.push({ key:k, value:val, editable: true })
+    }
+    res.json(list)
+  } catch(err) { next(err) }
 })
 
 msaAdminParams.app.post('/', (req, res, next) => {
 	const { key, value } = req.body
-	Msa.setParam(key, JSON.parse(value))
+	const def = Msa.paramDefs[key]
+	Msa.setParam(key, def.parse(value))
 	res.sendStatus(200)
 })
 
