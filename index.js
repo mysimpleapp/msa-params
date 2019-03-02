@@ -1,4 +1,4 @@
-const msaParams = module.exports = new Msa.Module("params")
+const msaParams = module.exports = new Msa.Module()
 
 const msaDb = Msa.require("db")
 const msaUser = Msa.require("user")
