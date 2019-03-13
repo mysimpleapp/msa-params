@@ -1,6 +1,6 @@
 {
   "name": "@mysimpleapp/msa-params",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MySimpleApp core module managing modules parameters",
   "main": "index.js",
   "scripts": {
@@ -10,8 +10,8 @@
   "license": "ISC",
   "msaKey": "params",
   "msaDependencies": {
-    "db": "../msa-db",
-    "user": "../msa-user",
-    "admin": "../msa-admin"
+    "db": "@mysimpleapp/msa-db",
+    "user": "@mysimpleapp/msa-user",
+    "admin": "@mysimpleapp/msa-admin"
   }
 }
