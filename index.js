@@ -1,15 +1,6 @@
 const msaParams = module.exports = new Msa.Module()
 
-const msaDb = Msa.require("db")
-const msaUser = Msa.require("user")
-
-const { ParamsDb } = require("./db")
-
-// admin
-
-require("./admin")
-
-// param desc
+// Param
 
 msaParams.Param = class extends Msa.Param {
 	init() {
@@ -22,6 +13,7 @@ msaParams.Param = class extends Msa.Param {
 }
 const ParamPt = msaParams.Param.prototype
 
+let ParamsDb
 ParamPt.save = function() {
 	ParamSaveStack = ParamSaveStack.then(() => {
 		return new Promise(async (ok, ko) => {
@@ -56,3 +48,9 @@ msaParams.ParamStr = class extends msaParams.Param {
 		return val
 	}
 }
+
+// other dependencies (at the end to avoid cycling deps)
+
+ParamsDb = require("./db").ParamsDb
+require("./admin")
+
