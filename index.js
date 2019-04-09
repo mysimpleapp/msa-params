@@ -68,7 +68,8 @@ msaParams.ParamDef = class {
 		return val
 	}
 	getStartVal(key){
-		let val = Msa.msaParamsStartDbVals[key]
+		let val
+		if(Msa.msaParamsStartDbVals) val = Msa.msaParamsStartDbVals[key]
 		if(val !== undefined) return this.parse(val)
 		return this.defVal
 	}
