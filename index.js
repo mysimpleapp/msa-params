@@ -56,10 +56,10 @@ msaParams.ParamDef = class {
 		Object.assign(this, kwargs)
 	}
 	deserialize(val){
-		return this.parse(JSON.parse(val))
+		return isDef(val) ? this.parse(JSON.parse(val)) : val
 	}
 	serialize(val){
-		return JSON.stringify(this.format(val))
+		return isDef(val) ? JSON.stringify(this.format(val)) : val
 	}
 	parse(val){
 		return val
@@ -70,7 +70,7 @@ msaParams.ParamDef = class {
 	getStartVal(key){
 		let val
 		if(Msa.msaParamsStartDbVals) val = Msa.msaParamsStartDbVals[key]
-		if(val !== undefined) return this.parse(val)
+		if(val !== undefined) return this.deserialize(val)
 		return this.defVal
 	}
 }
@@ -87,10 +87,10 @@ msaParams.ParamsDef = class {
 		this.paramDefs[key] = paramDef
 	}
 	deserialize(val){
-		return this.parse(JSON.parse(val))
+		return isDef(val) ? this.parse(JSON.parse(val)) : val
 	}
 	serialize(val){
-		return JSON.stringify(this.format(val))
+		return isDef(val) ? JSON.stringify(this.format(val)) : val
 	}
 	parse(val){
 		const res = {}, paramDefs = this.paramDefs
@@ -148,6 +148,13 @@ msaParams.saveGlobalParam = async function(key) {
 		key,
 		value: def.format(val)
 	})
+}
+
+
+// utils
+
+function isDef(val){
+	return val!==undefined && val!==null
 }
 
 
