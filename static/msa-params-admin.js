@@ -32,9 +32,15 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 	}
 
 	connectedCallback() {
+		this.initAttrs()
 		this.initContent()
 		this.initActions()
-		this.listParams()
+		this.listParams(this.key)
+	}
+
+	initAttrs(){
+		this.key = defAttr(this, "key", "")
+		this.baseUrl = defAttr(this, "base-url", "/admin/params")
 	}
 
 	initContent() {
@@ -47,23 +53,24 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 
 	sync() {
 		const t = this.Q("table.params tbody")
+		t.innerHTML = ""
 		for(let param of this.params){
 			const r = t.insertRow()
 			r.param = param
 			r.insertCell().textContent = param.key
-			const c = r.insertCell()
-			c.textContent = param.value
-			if(param.editable) this.makeParamEditable(r)
+			r.insertCell().textContent = param.value
+			const buttonsCell = r.insertCell()
+			if(param.editable) this.makeParamEditable(r, buttonsCell)
+			if(param.isParams) this.makeParamsListable(r, buttonsCell)
 		}
 	}
 
-	makeParamEditable(r) {
-		const c = r.insertCell()
-		const b = document.createElement("button")
-		b.textContent = "Edit"
-		c.appendChild(b)
-		b.onclick = () => {
-			const param = r.param
+	makeParamEditable(row, cell) {
+		const btn = document.createElement("button")
+		btn.textContent = "Edit"
+		cell.appendChild(btn)
+		btn.onclick = () => {
+			const param = row.param
 			let editor = param.editor
 			if(!editor) editor = "text"
 			if(typeof editor === "string") {
@@ -71,16 +78,29 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 					{ type: editor, value: param.value },
 					newVal => {
 						this.updatedParams.push({ param: param, newVal: newVal })
-						r.cells[1].textContent = newVal
-						r.classList.add('updated')
+						row.cells[1].textContent = newVal
+						row.classList.add('updated')
 					})
 			}
 			param.editor
 		}
 	}
 
-	listParams() {
-		ajax('GET', '/admin/params/list', params => {
+	makeParamsListable(row, cell) {
+		const btn = document.createElement("button")
+		btn.textContent = "List"
+		cell.appendChild(btn)
+		btn.onclick = () => {
+			const paramKey = row.param.key
+			window.location += '/'+paramKey
+//			const newKey = this.key ? `${this.key}.${paramKey}` : paramKey
+//			this.listParams(newKey)
+		}
+	}
+
+	listParams(key) {
+		ajax('GET', `${this.baseUrl}/_list/${key}` , params => {
+			this.key = key
 			this.params = params
 			this.sync()
 		})
@@ -88,15 +108,23 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 
 	updateParams() {
 		for(let u of this.updatedParams){
-			const param = u.param
-			ajax('POST', '/admin/params',
+			const paramKey = u.param.key
+			const fullKey = this.key ? `${this.key}.${paramKey}` : paramKey
+			ajax('POST', this.baseUrl,
 				{ body: {
-					key: param.key,
+					key: fullKey,
 					value: u.newVal
 				}},
 				() => location.reload())
 		}
 	}
+}
+
+
+// utils
+
+function defAttr(el, key, defVal){
+	return el.hasAttribute(key) ? el.getAttribute(key) : defVal
 }
 
 // register elem
