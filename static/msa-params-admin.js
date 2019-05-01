@@ -41,6 +41,7 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 	initAttrs(){
 		this.key = defAttr(this, "key", "")
 		this.baseUrl = defAttr(this, "base-url", "/admin/params")
+		this.syncUrl = defAttrAsBool(this, "sync-url", "false")
 	}
 
 	initContent() {
@@ -92,9 +93,12 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		cell.appendChild(btn)
 		btn.onclick = () => {
 			const paramKey = row.param.key
-			window.location += '/'+paramKey
-//			const newKey = this.key ? `${this.key}.${paramKey}` : paramKey
-//			this.listParams(newKey)
+			if(this.syncUrl)
+				window.location += '/'+paramKey
+			else {
+				const newKey = this.key ? `${this.key}.${paramKey}` : paramKey
+				this.listParams(newKey)
+			}
 		}
 	}
 
@@ -125,6 +129,11 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 
 function defAttr(el, key, defVal){
 	return el.hasAttribute(key) ? el.getAttribute(key) : defVal
+}
+
+function defAttrAsBool(el, key, defVal){
+	const val = defAttr(el, key, defVal)
+	return val == "true"
 }
 
 // register elem

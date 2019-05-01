@@ -28,6 +28,10 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		await saveGlobalParam(key)
 	}
 
+	syncUrl(){
+		return true
+	}
+
 	initApp(){
 		this.app.get('/_list', (req, res, next) => this.listMdw("", req, res, next))
 		this.app.get('/_list/:key', (req, res, next) => this.listMdw(req.params.key, req, res, next))
@@ -37,7 +41,8 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 			res.sendPage({
 				wel:'/params/msa-params-admin.js',
 				attrs: {
-					key
+					key,
+					"sync-url": this.syncUrl()
 				}
 			})
 		})
@@ -125,6 +130,10 @@ exp.MsaParamsAdminLocalModule = class extends exp.MsaParamsAdminModule {
 		}, {
 			where: toPkWhere(this.dbPkCols, req.msaParamsArgs.dbPkVals)
 		})
+	}
+
+	syncUrl(){
+		return false
 	}
 }
 
