@@ -1,6 +1,6 @@
 const exp = module.exports = {}
 
-// Param
+// Param [DEPRECATED]
 
 exp.Param = class extends Msa.Param {
 	init() {
@@ -34,7 +34,7 @@ ParamPt.parse = function(val) {
 }
 
 
-// ParamStr //////////////////////////////
+// ParamStr [DEPRECATED] //////////////////////////////
 
 exp.ParamStr = class extends exp.Param {
 	format(val) {
@@ -46,7 +46,7 @@ exp.ParamStr = class extends exp.Param {
 }
 
 
-// Msa.ParamDef
+// Msa.ParamDef //////////////////////////////////
 
 exp.ParamDef = class {
 	constructor(kwargs){
@@ -57,6 +57,9 @@ exp.ParamDef = class {
 	}
 	serialize(val){
 		return isDef(val) ? JSON.stringify(this.format(val)) : val
+	}
+	prettySerialize(val){
+		return this.serialize(val)
 	}
 	parse(val){
 		return val
@@ -69,6 +72,9 @@ exp.ParamDef = class {
 		if(Msa.msaParamsStartDbVals) val = Msa.msaParamsStartDbVals[key]
 		if(val !== undefined) return this.deserialize(val)
 		return this.defVal
+	}
+	getEditor(){
+		return null
 	}
 }
 

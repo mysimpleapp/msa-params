@@ -3,6 +3,7 @@ import { Q, importHtml, importOnCall, ajax } from "/msa/msa.js"
 // dynamic imports
 const popupDeps = `
 	<script type="module" src="/utils/msa-utils-popup.js"></script>`
+const importAsPopup = importOnCall(popupDeps, "MsaUtils.importAsPopup")
 const createInputPopup = importOnCall(popupDeps, "MsaUtils.createInputPopup")
 
 importHtml(`<style>
@@ -18,7 +19,7 @@ const content = `
 	<h1><center>Params</center></h1>
 	<p><button class="update">Update</button></p>
 	<p><table class="params" style="width:100%">
-		<thead><tr><th>Key</th><th>Value</th></tr></thead>
+		<thead><tr><th>Key</th><th>Value</th><th></th></tr></thead>
 		<tbody></tbody>
 	</table></p>`
 
@@ -59,7 +60,7 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 			const r = t.insertRow()
 			r.param = param
 			r.insertCell().textContent = param.key
-			r.insertCell().textContent = param.value
+			r.insertCell().textContent = param.prettyValue
 			const buttonsCell = r.insertCell()
 			if(param.editable) this.makeParamEditable(r, buttonsCell)
 			if(param.isParams) this.makeParamsListable(r, buttonsCell)
@@ -70,20 +71,25 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		const btn = document.createElement("button")
 		btn.textContent = "Edit"
 		cell.appendChild(btn)
-		btn.onclick = () => {
+		btn.onclick = async () => {
+			const onValidate = newVal => {
+				this.updatedParams.push({ param, newVal })
+				row.cells[1].textContent = newVal
+				row.classList.add('updated')
+			}
 			const param = row.param
 			let editor = param.editor
 			if(!editor) editor = "text"
 			if(typeof editor === "string") {
 				createInputPopup("Update param value",
 					{ type: editor, value: param.value },
-					newVal => {
-						this.updatedParams.push({ param: param, newVal: newVal })
-						row.cells[1].textContent = newVal
-						row.classList.add('updated')
-					})
+					onValidate)
+			} else {
+				const domEditorPopup = await importAsPopup(
+					Object.assign({ attrs: { "value": param.value }}, editor))
+				const domEditor = domEditorPopup.content
+				domEditor.addEventListener("validate", onValidate)
 			}
-			param.editor
 		}
 	}
 

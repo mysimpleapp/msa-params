@@ -65,16 +65,18 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 			if(paramDef){ 
 				const childParamDefs = paramDef.paramDefs
 				for(let k in childParamDefs) {
-					let val=null, isParams=false
+					let value=null, prettyValue=null, isParams=false, editor=null
 					const childParamDef = childParamDefs[k]
 					isParams = (childParamDef instanceof ParamsDef)
 					if(!isParams){
 						let childParamVal = param ? param[k] : undefined
 						if(childParamVal === undefined)
 							childParamVal = childParamDef.defVal
-						val = childParamDef.serialize(childParamVal)
+						value = childParamDef.serialize(childParamVal)
+						prettyValue = childParamDef.prettySerialize(childParamVal)
+						editor = childParamDef.getEditor()
 					}
-					list.push({ key:k, value:val, isParams, editable:(!isParams) })
+					list.push({ key:k, value, prettyValue, isParams, editable:(!isParams), editor })
 				}
 			}
 			res.json(list)
