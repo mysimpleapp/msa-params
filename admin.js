@@ -113,11 +113,11 @@ exp.MsaParamsAdminLocalModule = class extends exp.MsaParamsAdminModule {
 	}
 
 	async getRootParam(req){
-		const paramDef = this.getRootParamDef()
-		const dbParams = (await this.db.findOne({
+		const row = (await this.db.findOne({
 			attributes: [ this.dbParamsCol ],
 			where: toPkWhere(this.dbPkCols, req.msaParamsArgs.dbPkVals)
-		}))[this.dbParamsCol]
+		}))
+		const dbParams = row ? row[this.dbParamsCol] : null
 		return dbParams
 	}
 
