@@ -4,7 +4,7 @@ import { Q, importHtml, importOnCall, ajax } from "/msa/msa.js"
 const popupDeps = `
 	<script type="module" src="/utils/msa-utils-popup.js"></script>`
 const importAsPopup = importOnCall(popupDeps, "MsaUtils.importAsPopup")
-const createInputPopup = importOnCall(popupDeps, "MsaUtils.createInputPopup")
+const addInputPopup = importOnCall(popupDeps, "MsaUtils.addInputPopup")
 
 importHtml(`<style>
 	msa-params-admin {
@@ -81,11 +81,11 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 			let editor = param.editor
 			if(!editor) editor = "text"
 			if(typeof editor === "string") {
-				createInputPopup("Update param value",
+				addInputPopup(this, "Update param value",
 					{ type: editor, value: param.value },
 					onValidate)
 			} else {
-				const domEditorPopup = await importAsPopup(
+				const domEditorPopup = await importAsPopup(this,
 					Object.assign({ attrs: { "value": param.value }}, editor))
 				const domEditor = domEditorPopup.content
 				domEditor.addEventListener("validate", onValidate)
