@@ -82,8 +82,8 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 			if(!editor) editor = "text"
 			if(typeof editor === "string") {
 				addInputPopup(this, "Update param value",
-					{ type: editor, value: param.value },
-					onValidate)
+					{ type: editor, value: param.value })
+				.then(onValidate)
 			} else {
 				const domEditorPopup = await importAsPopup(this,
 					Object.assign({ attrs: { "value": param.value }}, editor))
