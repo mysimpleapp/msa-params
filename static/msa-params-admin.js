@@ -109,7 +109,8 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 	}
 
 	listParams(key) {
-		ajax('GET', `${this.baseUrl}/_list/${key}` , params => {
+		ajax('GET', `${this.baseUrl}/_list/${key}`)
+		.then(params => {
 			this.key = key
 			this.params = params
 			this.sync()
@@ -120,12 +121,13 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		for(let u of this.updatedParams){
 			const paramKey = u.param.key
 			const fullKey = this.key ? `${this.key}.${paramKey}` : paramKey
-			ajax('POST', this.baseUrl,
-				{ body: {
+			ajax('POST', this.baseUrl,{
+				body: {
 					key: fullKey,
 					value: u.newVal
-				}},
-				() => location.reload())
+				}
+			})
+			.then(() => location.reload())
 		}
 	}
 }
