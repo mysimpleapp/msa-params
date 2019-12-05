@@ -216,7 +216,7 @@ exp.setParam = function(param, key, val){
 }
 
 exp.getGlobalParam = function(key) {
-	return exp.getParam(exp.globalParams)
+	return exp.getParam(exp.globalParams, key)
 }
 
 exp.getGlobalParamDef = function(key) {
