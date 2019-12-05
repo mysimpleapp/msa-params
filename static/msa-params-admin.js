@@ -1,4 +1,4 @@
-import { Q, importHtml, importOnCall, ajax } from "/msa/msa.js"
+import { Q, importHtml, importOnCall, ajax } from "/utils/msa-utils.js"
 
 // dynamic imports
 const popupSrc = "/utils/msa-utils-popup.js"

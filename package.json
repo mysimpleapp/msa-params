@@ -10,6 +10,7 @@
   "license": "ISC",
   "msaKey": "params",
   "msaDependencies": {
+    "utils": "@mysimpleapp/msa-utils",
     "db": "@mysimpleapp/msa-db",
     "admin": "@mysimpleapp/msa-admin"
   }
