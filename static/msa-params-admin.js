@@ -71,10 +71,10 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		const btn = document.createElement("button")
 		btn.textContent = "Edit"
 		cell.appendChild(btn)
-		btn.onclick = async () => {
-			const onValidate = newVal => {
-				this.updatedParams.push({ param, newVal })
-				row.cells[1].textContent = newVal
+		btn.onclick = () => {
+			const onValidate = res => {
+				this.updatedParams.push({ param, value:res.value })
+				row.cells[1].textContent = res.prettyValue
 				row.classList.add('updated')
 			}
 			const param = row.param
@@ -85,10 +85,9 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 					{ type: editor, value: param.value })
 				.then(onValidate)
 			} else {
-				const domEditorPopup = await importAsPopup(this,
-					Object.assign({ attrs: { "value": param.value }}, editor))
-				const domEditor = domEditorPopup.content
-				domEditor.addEventListener("validate", onValidate)
+				addInputPopup(this,
+					deepMerge({ attrs: { value: param.value }}, editor))
+				.then(onValidate)
 			}
 		}
 	}
@@ -142,6 +141,17 @@ function defAttr(el, key, defVal){
 function defAttrAsBool(el, key, defVal){
 	const val = defAttr(el, key, defVal)
 	return val == "true"
+}
+
+function deepMerge(obj, obj2){
+	for(let k in obj2){
+		const val = obj[k], val2 = obj2[k]
+		if(typeof val === "object" && typeof val2 === "object")
+			deepMerge(val, val2)
+		else
+			obj[k] = val2
+	}
+	return obj
 }
 
 // register elem
