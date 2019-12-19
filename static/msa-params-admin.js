@@ -83,7 +83,7 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 			if(typeof editor === "string") {
 				addInputPopup(this, "Update param value",
 					{ type: editor, value: param.value })
-				.then(onValidate)
+				.then(res => onValidate({ value:res, prettyValue:res }))
 			} else {
 				addInputPopup(this,
 					deepMerge({ attrs: { value: param.value }}, editor))
@@ -122,7 +122,7 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 			const paramId = this.paramsId ? `${this.paramsId}.${paramKey}` : paramKey
 			ajax('POST', this.baseUrl, { body: {
 				id: paramId,
-				value: u.newVal
+				value: u.value
 			}})
 			.then(() => location.reload())
 		}
