@@ -36,11 +36,11 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		this.initAttrs()
 		this.initContent()
 		this.initActions()
-		this.listParams(this.key)
+		this.listParams(this.paramsId)
 	}
 
 	initAttrs(){
-		this.key = defAttr(this, "key", "")
+		this.paramsId = defAttr(this, "params-id", "")
 		this.baseUrl = defAttr(this, "base-url", "/admin/params")
 		this.syncUrl = defAttrAsBool(this, "sync-url", "false")
 	}
@@ -101,16 +101,16 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 			if(this.syncUrl)
 				window.location += '/'+paramKey
 			else {
-				const newKey = this.key ? `${this.key}.${paramKey}` : paramKey
-				this.listParams(newKey)
+				const newParamsId = this.paramsId ? `${this.paramsId}.${paramKey}` : paramKey
+				this.listParams(newParamsId)
 			}
 		}
 	}
 
-	listParams(key) {
-		ajax('GET', `${this.baseUrl}/_list/${key}`)
+	listParams(id) {
+		ajax('GET', `${this.baseUrl}/_list/${id}`)
 		.then(params => {
-			this.key = key
+			this.paramsId = id
 			this.params = params
 			this.sync()
 		})
@@ -119,13 +119,11 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 	updateParams() {
 		for(let u of this.updatedParams){
 			const paramKey = u.param.key
-			const fullKey = this.key ? `${this.key}.${paramKey}` : paramKey
-			ajax('POST', this.baseUrl,{
-				body: {
-					key: fullKey,
-					value: u.newVal
-				}
-			})
+			const paramId = this.paramsId ? `${this.paramsId}.${paramKey}` : paramKey
+			ajax('POST', this.baseUrl, { body: {
+				id: paramId,
+				value: u.newVal
+			}})
 			.then(() => location.reload())
 		}
 	}

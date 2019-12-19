@@ -67,9 +67,9 @@ exp.ParamDef = class {
 	format(val){
 		return val
 	}
-	getStartVal(key){
+	getStartVal(id){
 		let val
-		if(Msa.msaParamsStartDbVals) val = Msa.msaParamsStartDbVals[key]
+		if(Msa.msaParamsStartDbVals) val = Msa.msaParamsStartDbVals[id]
 		if(val !== undefined) return this.deserialize(val)
 		return this.defVal
 	}
@@ -118,12 +118,12 @@ exp.ParamsDef = class {
 		}
 		return res
 	}
-	getStartVal(key){
+	getStartVal(id){
 		const res = {}, paramDefs = this.paramDefs
-		for(let key2 in paramDefs){
-			const val2 = paramDefs[key2].getStartVal(`${key}.${key2}`)
-			if(val2 !== undefined)
-				res[key2] = val2
+		for(let key in paramDefs){
+			const val = paramDefs[key].getStartVal(`${id}.${key}`)
+			if(val !== undefined)
+				res[key] = val
 		}
 		return res
 	}
@@ -132,13 +132,13 @@ exp.ParamsDef = class {
 exp.globalParams = {}
 exp.globalParamDefs = new exp.ParamsDef()
 
-exp.addGlobalParam = function(key, paramDef){
-	if(exp.globalParamDefs[key] !== undefined){
-		console.warning(`Params with key "${key}" already registered !`)
+exp.addGlobalParam = function(id, paramDef){
+	if(exp.globalParamDefs[id] !== undefined){
+		console.warning(`Params with id "${id}" already registered !`)
 		return
 	}
-	exp.globalParamDefs.add(key, paramDef)
-	exp.globalParams[key] = paramDef.getStartVal(key)
+	exp.globalParamDefs.add(id, paramDef)
+	exp.globalParams[id] = paramDef.getStartVal(id)
 }
 /*
 exp.getGlobalParam = function(key) {
@@ -183,7 +183,7 @@ exp.saveGlobalParam = async function(key) {
 }
 */
 exp.getParam = function(param, key){
-	const keySplit = splitKey(key)
+	const keySplit = splitKeyPath(key)
 	for(let k of keySplit)
 		if(param === undefined)
 			return undefined
@@ -192,9 +192,9 @@ exp.getParam = function(param, key){
 	return param
 }
 
-exp.getParamDef = function(paramDef, key){
-	const keySplit = splitKey(key)
-	for(let k of keySplit)
+exp.getParamDef = function(paramDef, keyPath){
+	const keys = splitKeyPath(keyPath)
+	for(let k of keys)
 		if(paramDef === undefined)
 			return undefined
 		else
@@ -202,29 +202,29 @@ exp.getParamDef = function(paramDef, key){
 	return paramDef
 }
 
-exp.setParam = function(param, key, val){
-	const keySplit = splitKey(key),
-		keySplitLen = keySplit.length
-	for(let i=0; i<keySplitLen-1; ++i){
-		const k = keySplit[i]
+exp.setParam = function(param, keyPath, val){
+	const keys = splitKeyPath(keyPath),
+		keysLen = keys.length
+	for(let i=0; i<keysLen-1; ++i){
+		const k = keys[i]
 		let childParam = param[k]
 		if(childParam === undefined)
 			childParam = param[k] = {}
 		param = childParam
 	}
-	param[keySplit[keySplitLen-1]] = val
+	param[keys[keysLen-1]] = val
 }
 
-exp.getGlobalParam = function(key) {
-	return exp.getParam(exp.globalParams, key)
+exp.getGlobalParam = function(id) {
+	return exp.getParam(exp.globalParams, id)
 }
 
-exp.getGlobalParamDef = function(key) {
-	return exp.getParamDef(exp.globalParamDefs, key)
+exp.getGlobalParamDef = function(id) {
+	return exp.getParamDef(exp.globalParamDefs, id)
 }
 
-exp.setGlobalParam = function(key, val){
-	exp.setParam(exp.globalParams, key, val)
+exp.setGlobalParam = function(id, val){
+	exp.setParam(exp.globalParams, id, val)
 }
 
 // TO DEPRECATE
@@ -263,7 +263,7 @@ function isDef(val){
 	return val!==undefined && val!==null
 }
 
-function splitKey(key){
+function splitKeyPath(key){
 	if(!key) return []
 	return key.split('.')
 }

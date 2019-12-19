@@ -2,15 +2,15 @@ const { getGlobalParam, getGlobalParamDef } = require("./param")
 const { orm, Orm } = Msa.require("db")
 
 const ParamsDb = orm.define('msa_params', {
-	key: { type: Orm.STRING, primaryKey: true },
+	id: { type: Orm.STRING, primaryKey: true },
 	value: Orm.STRING
 })
 
-async function saveGlobalParam(key) {
-	const val = getGlobalParam(key)
-	const def = getGlobalParamDef(key)
+async function saveGlobalParam(id) {
+	const val = getGlobalParam(id)
+	const def = getGlobalParamDef(id)
 	await ParamsDb.upsert({
-		key,
+		id,
 		value: def.serialize(val)
 	})
 }
