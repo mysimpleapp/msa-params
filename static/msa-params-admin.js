@@ -1,9 +1,6 @@
 import { Q, importHtml, importOnCall, ajax } from "/utils/msa-utils.js"
 
-// dynamic imports
 const popupSrc = "/utils/msa-utils-popup.js"
-const importAsPopup = importOnCall(popupSrc, "importAsPopup")
-const addInputPopup = importOnCall(popupSrc, "addInputPopup")
 
 
 importHtml(`<style>
@@ -71,24 +68,29 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		const btn = document.createElement("button")
 		btn.textContent = "Edit"
 		cell.appendChild(btn)
-		btn.onclick = () => {
-			const onValidate = res => {
-				this.updatedParams.push({ param, value:res.value })
-				row.cells[1].textContent = res.prettyValue
-				row.classList.add('updated')
-			}
+		btn.onclick = async () => {
 			const param = row.param
 			let editor = param.editor
 			if(!editor) editor = "text"
+			const { addInputPopup } = await import(popupSrc)
 			if(typeof editor === "string") {
-				addInputPopup(this, "Update param value",
+				var popup = addInputPopup(this, "Update param value",
 					{ type: editor, value: param.value })
-				.then(res => onValidate({ value:res, prettyValue:res }))
 			} else {
-				addInputPopup(this,
+				var popup = addInputPopup(this,
 					deepMerge({ attrs: { value: param.value }}, editor))
-				.then(onValidate)
 			}
+			popup.then(val => {
+				if(popup.content.getParamValues) {
+					var { value, prettyValue } = popup.content.getParamValues()
+				} else {
+					var value = val
+					var prettyValue = val
+				}
+				this.updatedParams.push({ param, value })
+				row.cells[1].textContent = prettyValue
+				row.classList.add('updated')
+			})
 		}
 	}
 
