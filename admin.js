@@ -24,7 +24,7 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 	async updateParam(req, id, val){
 		const rootParam = await this.getRootParam(req)
 		const paramDef = getParamDef(this.getRootParamDef(), id)
-		setParam(rootParam, id, paramDef.deserialize(val))
+		setParam(rootParam, id, paramDef.parse(val))
 		await saveGlobalParam(id)
 	}
 
@@ -65,18 +65,18 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 			if(paramDef){ 
 				const childParamDefs = paramDef.paramDefs
 				for(let key in childParamDefs) {
-					let value=null, prettyValue=null, isParams=false, editor=null
+					let value=null, isParams=false, viewer=null, editor=null
 					const childParamDef = childParamDefs[key]
 					isParams = (childParamDef instanceof ParamsDef)
 					if(!isParams){
 						let childParamVal = param ? param[key] : undefined
 						if(childParamVal === undefined)
 							childParamVal = childParamDef.defVal
-						value = childParamDef.serialize(childParamVal)
-						prettyValue = childParamDef.prettySerialize(childParamVal)
+						value = childParamDef.format(childParamVal)
+						viewer = childParamDef.getViewer()
 						editor = childParamDef.getEditor()
 					}
-					list.push({ key, value, prettyValue, isParams, editable:(!isParams), editor })
+					list.push({ key, value, isParams, editable:(!isParams), viewer, editor })
 				}
 			}
 			res.json(list)
@@ -126,7 +126,7 @@ exp.MsaParamsAdminLocalModule = class extends exp.MsaParamsAdminModule {
 		let rootParam = await this.getRootParam(req)
 		if(!rootParam) rootParam = {}
 		const paramDef = getParamDef(rootParamDef, id)
-		setParam(rootParam, id, paramDef.deserialize(val))
+		setParam(rootParam, id, paramDef.parse(val))
 		await this.db.update({
 			[ this.dbParamsCol ]: rootParam
 		}, {

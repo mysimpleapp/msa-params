@@ -58,9 +58,6 @@ exp.ParamDef = class {
 	serialize(val){
 		return isDef(val) ? JSON.stringify(this.format(val)) : val
 	}
-	prettySerialize(val){
-		return this.serialize(val)
-	}
 	parse(val){
 		return val
 	}
@@ -73,8 +70,11 @@ exp.ParamDef = class {
 		if(val !== undefined) return this.deserialize(val)
 		return this.defVal
 	}
+	getViewer(){
+		return { tag:"msa-params-viewer" }
+	}
 	getEditor(){
-		return null
+		return { tag:"msa-params-editor" }
 	}
 }
 
@@ -253,6 +253,12 @@ exp.ParamStrDef = class extends exp.ParamDef {
 	}
 	serialize(val){
 		return val
+	}
+	getViewer(){
+		return { tag:"msa-params-text-viewer" }
+	}
+	getEditor(){
+		return { tag:"msa-params-text-editor" }
 	}
 }
 

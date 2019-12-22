@@ -50,14 +50,19 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		this.Q('button.update').onclick = () => this.updateParams()
 	}
 
-	sync() {
+	async sync() {
 		const t = this.Q("table.params tbody")
 		t.innerHTML = ""
 		for(let param of this.params){
 			const r = t.insertRow()
 			r.param = param
 			r.insertCell().textContent = param.key
-			r.insertCell().textContent = param.prettyValue
+			const valTd = r.insertCell()
+			if(param.viewer){
+				const viewer = (await importHtml(param.viewer, valTd))[0]
+				viewer.classList.add("viewer")
+				viewer.setValue(param.value)
+			}
 			const buttonsCell = r.insertCell()
 			if(param.editable) this.makeParamEditable(r, buttonsCell)
 			if(param.isParams) this.makeParamsListable(r, buttonsCell)
@@ -72,23 +77,13 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 			const param = row.param
 			let editor = param.editor
 			if(!editor) editor = "text"
+			const editorEl = (await importHtml(editor, true))[0]
 			const { addInputPopup } = await import(popupSrc)
-			if(typeof editor === "string") {
-				var popup = addInputPopup(this, "Update param value",
-					{ type: editor, value: param.value })
-			} else {
-				var popup = addInputPopup(this,
-					deepMerge({ attrs: { value: param.value }}, editor))
-			}
+			const popup = addInputPopup(this, editorEl)
+			setElValue(editorEl, param.value)
 			popup.then(val => {
-				if(popup.content.getParamValues) {
-					var { value, prettyValue } = popup.content.getParamValues()
-				} else {
-					var value = val
-					var prettyValue = val
-				}
-				this.updatedParams.push({ param, value })
-				row.cells[1].textContent = prettyValue
+				row.querySelector(".viewer").setValue(val)
+				this.updatedParams.push({ param, value:val })
 				row.classList.add('updated')
 			})
 		}
@@ -143,6 +138,11 @@ function defAttrAsBool(el, key, defVal){
 	return val == "true"
 }
 
+function setElValue(el, val){
+	if(el.setValue) el.setValue(val)
+	else el.value = val
+}
+/*
 function deepMerge(obj, obj2){
 	for(let k in obj2){
 		const val = obj[k], val2 = obj2[k]
@@ -153,6 +153,64 @@ function deepMerge(obj, obj2){
 	}
 	return obj
 }
+*/
 
-// register elem
 customElements.define("msa-params-admin", HTMLMsaParamsAdminElement)
+
+
+// msa-params-viewer
+
+importHtml(`<style>
+	msa-params-viewer, msa-params-text-viewer {
+		display: block;
+	}
+</style>`)
+
+
+export class HTMLMsaParamsViewerElement extends HTMLElement {
+	setValue(val){
+		this.textContent = JSON.stringify(val)
+	}
+}
+customElements.define("msa-params-viewer", HTMLMsaParamsViewerElement)
+
+
+export class HTMLMsaParamsTextViewerElement extends HTMLElement {
+	setValue(val){
+		this.textContent = val
+	}
+}
+customElements.define("msa-params-text-viewer", HTMLMsaParamsTextViewerElement)
+
+
+// msa-params-viewer
+
+const editorTemplate = `
+	<input type="text">`
+
+export class HTMLMsaParamsEditorElement extends HTMLElement {
+	getTemplate(){
+		return editorTemplate
+	}
+	connectedCallback(){
+		this.innerHTML = this.getTemplate()
+	}
+	getValue(){
+		return JSON.parse(this.querySelector("input").value)
+	}
+	setValue(val){
+		this.querySelector("input").value = JSON.stringify(val)
+	}
+}
+customElements.define("msa-params-editor", HTMLMsaParamsEditorElement)
+
+
+export class HTMLMsaParamsTextEditorElement extends HTMLMsaParamsEditorElement {
+	getValue(){
+		return this.querySelector("input").value
+	}
+	setValue(val){
+		this.querySelector("input").value = val
+	}
+}
+customElements.define("msa-params-text-editor", HTMLMsaParamsTextEditorElement)
