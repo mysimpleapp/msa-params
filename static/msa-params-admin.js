@@ -161,7 +161,7 @@ customElements.define("msa-params-admin", HTMLMsaParamsAdminElement)
 // msa-params-viewer
 
 importHtml(`<style>
-	msa-params-viewer, msa-params-text-viewer {
+	msa-params-viewer, msa-params-str-viewer {
 		display: block;
 	}
 </style>`)
@@ -175,12 +175,12 @@ export class HTMLMsaParamsViewerElement extends HTMLElement {
 customElements.define("msa-params-viewer", HTMLMsaParamsViewerElement)
 
 
-export class HTMLMsaParamsTextViewerElement extends HTMLElement {
+export class HTMLMsaParamsStrViewerElement extends HTMLElement {
 	setValue(val){
 		this.textContent = val
 	}
 }
-customElements.define("msa-params-text-viewer", HTMLMsaParamsTextViewerElement)
+customElements.define("msa-params-str-viewer", HTMLMsaParamsStrViewerElement)
 
 
 // msa-params-viewer
@@ -205,7 +205,7 @@ export class HTMLMsaParamsEditorElement extends HTMLElement {
 customElements.define("msa-params-editor", HTMLMsaParamsEditorElement)
 
 
-export class HTMLMsaParamsTextEditorElement extends HTMLMsaParamsEditorElement {
+export class HTMLMsaParamsStrEditorElement extends HTMLMsaParamsEditorElement {
 	getValue(){
 		return this.querySelector("input").value
 	}
@@ -213,4 +213,4 @@ export class HTMLMsaParamsTextEditorElement extends HTMLMsaParamsEditorElement {
 		this.querySelector("input").value = val
 	}
 }
-customElements.define("msa-params-text-editor", HTMLMsaParamsTextEditorElement)
+customElements.define("msa-params-str-editor", HTMLMsaParamsStrEditorElement)

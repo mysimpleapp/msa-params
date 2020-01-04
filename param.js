@@ -121,10 +121,10 @@ exp.ParamStr = class extends exp.Param {
 		this.setFromJsonable(val)
 	}
 	getViewer(){
-		return { tag:"msa-params-text-viewer" }
+		return { tag:"msa-params-str-viewer" }
 	}
 	getEditor(){
-		return { tag:"msa-params-text-editor" }
+		return { tag:"msa-params-str-editor" }
 	}
 }
 
