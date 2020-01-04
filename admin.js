@@ -13,7 +13,7 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		this.initApp()
 	}
 
-	async getRootParam(){
+	async getRootParam(req){
 		return globalParams
 	}
 
@@ -21,6 +21,10 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		const rootParam = await this.getRootParam(req)
 		const param = getParamById(rootParam, id)
 		param.setFromJsonable(val)
+		await this.updateParamInDb(req, id, rootParam, param)
+	}
+
+	async updateParamInDb(req, id, rootParam, param){
 		await ParamsDb.upsert({
 			id,
 			value: param.getAsDbVal()
@@ -85,45 +89,6 @@ msaAdmin.register({
 	title: "Params",
 	help: "Manage all the website parameters."
 })
-
-
-// local
-
-exp.MsaParamsAdminLocalModule = class extends exp.MsaParamsAdminModule {
-
-	constructor(kwargs){
-		super()
-		Object.assign(this, kwargs)
-		checkVal(this, "paramCls")
-		checkVal(this, "db")
-		checkVal(this, "dbPkCols")
-		defVal(this, "dbParamsCol", "params")
-	}
-
-	async getRootParam(req){
-		const row = (await this.db.findOne({
-			attributes: [ this.dbParamsCol ],
-			where: toPkWhere(this.dbPkCols, req.msaParamsArgs.dbPkVals)
-		}))
-		const param = row ? row[this.dbParamsCol] : (new this.paramCls())
-		return param
-	}
-
-	async updateParam(req, id, val){
-		const rootParam = await this.getRootParam(req)
-		const param = getParamById(rootParam, id)
-		param.setFromJsonable(val)
-		await this.db.update({
-			[ this.dbParamsCol ]: rootParam
-		}, {
-			where: toPkWhere(this.dbPkCols, req.msaParamsArgs.dbPkVals)
-		})
-	}
-
-	syncUrl(){
-		return false
-	}
-}
 
 // utils
 
