@@ -10,7 +10,7 @@ module.exports = async () => {
 		Msa.msaParamsStartDbVals[p.id] = p.value
 		// inform that paramater exists
 		// but without initialising it (as this would require param's defnitions)
-		Msa.setParam(p.id, null, { save: false })
+//		Msa.setParam(p.id, null, { save: false })
 	}
 }
 

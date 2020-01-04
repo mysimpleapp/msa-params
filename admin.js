@@ -1,5 +1,5 @@
-const { ParamsDef, globalParams, globalParamDefs, getParam, getParamDef, setParam } = require("./param")
-const { ParamsDb, saveGlobalParam } = require("./db")
+const { ParamDict, globalParams, getParamById } = require("./param")
+const { ParamsDb } = require("./db")
 const msaAdmin = Msa.require("admin")
 
 const assert = require('assert')
@@ -13,19 +13,18 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		this.initApp()
 	}
 
-	getRootParamDef(){
-		return globalParamDefs
-	}
-
 	async getRootParam(){
 		return globalParams
 	}
 
 	async updateParam(req, id, val){
 		const rootParam = await this.getRootParam(req)
-		const paramDef = getParamDef(this.getRootParamDef(), id)
-		setParam(rootParam, id, paramDef.parse(val))
-		await saveGlobalParam(id)
+		const param = getParamById(rootParam, id)
+		param.setFromJsonable(val)
+		await ParamsDb.upsert({
+			id,
+			value: param.getAsDbVal()
+		})
 	}
 
 	syncUrl(){
@@ -60,24 +59,17 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		try {
 			const list = []
 			const rootParam = await this.getRootParam(req),
-				param = getParam(rootParam, id)
-			const paramDef = getParamDef(this.getRootParamDef(), id)
-			if(paramDef){ 
-				const childParamDefs = paramDef.paramDefs
-				for(let key in childParamDefs) {
-					let value=null, isParams=false, viewer=null, editor=null
-					const childParamDef = childParamDefs[key]
-					isParams = (childParamDef instanceof ParamsDef)
-					if(!isParams){
-						let childParamVal = param ? param[key] : undefined
-						if(childParamVal === undefined)
-							childParamVal = childParamDef.defVal
-						value = childParamDef.format(childParamVal)
-						viewer = childParamDef.getViewer()
-						editor = childParamDef.getEditor()
-					}
-					list.push({ key, value, isParams, editable:(!isParams), viewer, editor })
+				param = getParamById(rootParam, id)
+			for(let key in param) {
+				let value=null, isParams=false, viewer=null, editor=null
+				const childParam = param[key]
+				const isChildParamDict = (childParam instanceof ParamDict)
+				if(!isChildParamDict){
+					value = childParam.getAsJsonable()
+					viewer = childParam.getViewer()
+					editor = childParam.getEditor()
 				}
+				list.push({ key, value, isParams:isChildParamDict, editable:(!isChildParamDict), viewer, editor })
 			}
 			res.json(list)
 		} catch(err) { next(err) }
@@ -102,14 +94,10 @@ exp.MsaParamsAdminLocalModule = class extends exp.MsaParamsAdminModule {
 	constructor(kwargs){
 		super()
 		Object.assign(this, kwargs)
-		checkVal(this, "paramDef")
+		checkVal(this, "paramCls")
 		checkVal(this, "db")
 		checkVal(this, "dbPkCols")
 		defVal(this, "dbParamsCol", "params")
-	}
-
-	getRootParamDef(){
-		return this.paramDef
 	}
 
 	async getRootParam(req){
@@ -117,16 +105,14 @@ exp.MsaParamsAdminLocalModule = class extends exp.MsaParamsAdminModule {
 			attributes: [ this.dbParamsCol ],
 			where: toPkWhere(this.dbPkCols, req.msaParamsArgs.dbPkVals)
 		}))
-		const dbParams = row ? row[this.dbParamsCol] : null
-		return dbParams
+		const param = row ? row[this.dbParamsCol] : (new this.paramCls())
+		return param
 	}
 
 	async updateParam(req, id, val){
-		const rootParamDef = this.getRootParamDef()
-		let rootParam = await this.getRootParam(req)
-		if(!rootParam) rootParam = {}
-		const paramDef = getParamDef(rootParamDef, id)
-		setParam(rootParam, id, paramDef.parse(val))
+		const rootParam = await this.getRootParam(req)
+		const param = getParamById(rootParam, id)
+		param.setFromJsonable(val)
 		await this.db.update({
 			[ this.dbParamsCol ]: rootParam
 		}, {
@@ -146,11 +132,7 @@ function urlToId(url){
 		.replace(/\/$/,'')
 		.replace(/\/+/g,'.')
 }
-/*
-function splitKey(key){
-	return key ? key.split('.') : []
-}
-*/
+
 function checkVal(obj, key){
 	if(obj[key] === undefined)
 		throw `${obj.constructor.name}.${key} is not defined`
