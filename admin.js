@@ -1,8 +1,6 @@
 const { ParamDict, globalParams, getParamById } = require("./param")
-const { ParamsDb } = require("./db")
+const { withDb } = Msa.require("db")
 const msaAdmin = Msa.require("admin")
-
-const assert = require('assert')
 
 const exp = module.exports = {}
 
@@ -13,22 +11,36 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		this.initApp()
 	}
 
-	async getRootParam(req){
+	async getCtxRootParam(ctx){
+		const res = ctx.rootParam
+		if(!res) res = ctx.rootParam = await this.getRootParam(ctx)
+		return res
+	}
+
+	async getRootParam(ctx){
 		return globalParams
 	}
 
-	async updateParam(req, id, val){
-		const rootParam = await this.getRootParam(req)
-		const param = getParamById(rootParam, id)
-		param.setFromJsonable(val)
-		await this.updateParamInDb(req, id, rootParam, param)
+	async getCtxParam(ctx){
+		const res = ctx.param
+		if(!res){
+			const rootParam = await this.getCtxRootParam(ctx)
+			res = ctx.param = getParamById(rootParam, ctx.id)
+		}
+		return res
 	}
 
-	async updateParamInDb(req, id, rootParam, param){
-		await ParamsDb.upsert({
-			id,
-			value: param.getAsDbVal()
-		})
+	async updateParam(ctx, val){
+		const param = await this.getCtxParam(ctx)
+		param.setFromJsonable(val)
+		await this.updateParamInDb(ctx)
+	}
+
+	async updateParamInDb(ctx){
+		const fields = { id:ctx.id, value:ctx.param.getAsDbVal() }
+		const res = await ctx.db.run("UPDATE msa_params SET value=:value WHERE id=:id", fields)
+		if(res.nbChanges === 0)
+			await ctx.db.run("INSERT INTO msa_params (id, value) VALUES (:id,:value)", fields)
 	}
 
 	syncUrl(){
@@ -50,20 +62,21 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 			})
 		})
 
-		this.app.post('/', async (req, res, next) => {
-			try {
+		this.app.post('/', (req, res, next) => {
+			withDb(async db => {
 				const { id, value } = req.body
-				await this.updateParam(req, id, value)
+				const ctx = { req, db, id }
+				await this.updateParam(ctx, value)
 				res.sendStatus(200)
-			} catch(err){ next(err) }
+			}).catch(next)
 		})
 	}
 
 	async listMdw(id, req, res, next){
-		try {
+		withDb(db => {
+			const ctx = { req, db, id }
+			const param = this.getCtxParam(ctx)
 			const list = []
-			const rootParam = await this.getRootParam(req),
-				param = getParamById(rootParam, id)
 			for(let key in param) {
 				let value=null, isParams=false, viewer=null, editor=null
 				const childParam = param[key]
@@ -76,7 +89,7 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 				list.push({ key, value, isParams:isChildParamDict, editable:(!isChildParamDict), viewer, editor })
 			}
 			res.json(list)
-		} catch(err) { next(err) }
+		}).catch(next)
 	}
 }
 
@@ -97,22 +110,3 @@ function urlToId(url){
 		.replace(/\/$/,'')
 		.replace(/\/+/g,'.')
 }
-
-function checkVal(obj, key){
-	if(obj[key] === undefined)
-		throw `${obj.constructor.name}.${key} is not defined`
-}
-
-function defVal(kwargs, key, dVal){
-	if (kwargs[key] === undefined)
-		kwargs[key] = dVal
-}
-
-function toPkWhere(dbPkCols, dbPkVals){
-	assert(dbPkCols.length == dbPkVals.length, "dbPkCols.length == dbPkVals.length")
-	const res = {}
-	for(let i=0, len=dbPkCols.length; i<len; ++i)
-		res[dbPkCols[i]] = dbPkVals[i]
-	return res
-}
-

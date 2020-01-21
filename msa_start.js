@@ -1,9 +1,9 @@
-module.exports = async () => {
+const { withDb } = Msa.require("db")
+
+module.exports = async () => await withDb(async db => {
 	// retrieve params from DB
-	const { ParamsDb } = require("./db")
-	const dbParams = await ParamsDb.findAll({
-		attributes: ['id', 'value']
-	})
+	const dbParams = await db.get(
+		"SELECT id, value FROM msa_params")
 	// save param in global var
 	Msa.msaParamsStartDbVals = {}
 	for(let p of dbParams) {
@@ -12,5 +12,4 @@ module.exports = async () => {
 		// but without initialising it (as this would require param's defnitions)
 //		Msa.setParam(p.id, null, { save: false })
 	}
-}
-
+})
