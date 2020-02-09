@@ -3,76 +3,76 @@ const exp = module.exports = {}
 const noDefaults = { noDefaults: true }
 
 exp.Param = class {
-	constructor(val){
+	constructor(val) {
 		this.value = val
 	}
-	get(){
+	get() {
 		return this.value
 	}
-	getAsJsonable(kwargs){
+	getAsJsonable(kwargs) {
 		return this.value
 	}
-	setFromJsonable(val){
+	setFromJsonable(val) {
 		this.value = val
 	}
-	getAsDbVal(){
+	getAsDbVal() {
 		const val = this.getAsJsonable(noDefaults)
-		if(val !== undefined)
+		if (val !== undefined)
 			return JSON.stringify(val)
 	}
-	setFromDbVal(val){
-		if(val === undefined || val === null)
+	setFromDbVal(val) {
+		if (val === undefined || val === null)
 			val = undefined
 		else
 			val = JSON.parse(val)
 		this.setFromJsonable(val)
 	}
-	static newFromDbVal(val){
+	static newFromDbVal(val) {
 		const res = new this()
 		res.setFromDbVal(val)
 		return res
 	}
-	getDescription(){}
-	getViewer(){
-		return { tag:"msa-params-viewer" }
+	getDescription() { }
+	getViewer() {
+		return { tag: "msa-params-viewer" }
 	}
-	getEditor(){
-		return { tag:"msa-params-editor" }
+	getEditor() {
+		return { tag: "msa-params-editor" }
 	}
 }
 
 
 exp.ParamDict = class {
-	getAsJsonable(kwargs){
+	getAsJsonable(kwargs) {
 		const res = {}
-		for(let k in this)
+		for (let k in this)
 			res[k] = this[k].getAsJsonable(kwargs)
 		return res
 	}
-	setFromJsonable(val){
-		for(let k in this){
+	setFromJsonable(val) {
+		for (let k in this) {
 			const v = val ? val[k] : undefined
 			this[k].setFromJsonable(v)
 		}
 	}
-	getAsDbVal(){
+	getAsDbVal() {
 		const val = this.getAsJsonable(noDefaults)
-		if(val !== undefined)
+		if (val !== undefined)
 			return JSON.stringify(val)
 	}
-	setFromDbVal(val){
-		if(val === undefined || val === null)
+	setFromDbVal(val) {
+		if (val === undefined || val === null)
 			val = undefined
 		else
 			val = JSON.parse(val)
 		this.setFromJsonable(val)
 	}
-	static newFromDbVal(val){
+	static newFromDbVal(val) {
 		const res = new this()
 		res.setFromDbVal(val)
 		return res
 	}
-	getDescription(){}
+	getDescription() { }
 }
 
 
@@ -80,16 +80,16 @@ exp.globalParams = {}
 exp.globalParamDefs = new exp.ParamDict()
 
 
-const getParamById = exp.getParamById = function(rootParam, id){
+const getParamById = exp.getParamById = function (rootParam, id) {
 	const keys = splitId(id)
 	let param = rootParam
-	for(let key of keys)
+	for (let key of keys)
 		param = param[key]
 	return param
 }
 
-exp.addGlobalParam = function(id, param){
-	if(typeof param === "function")
+exp.addGlobalParam = function (id, param) {
+	if (typeof param === "function")
 		param = new param()
 	const keys = splitId(id)
 	const lastKey = keys.pop()
@@ -102,11 +102,11 @@ exp.addGlobalParam = function(id, param){
 		const dbVal = dbVals[id]
 		param.setFromDbVal(dbVal)
 	}
-	if(id in dbVals)
+	if (id in dbVals)
 		applyParamStartDbVal(id)
 	const idd = `${id}.`
-	for(let id2 in dbVals)
-		if(id2.startsWith(idd))
+	for (let id2 in dbVals)
+		if (id2.startsWith(idd))
 			applyParamStartDbVal(id2)
 }
 
@@ -114,17 +114,17 @@ exp.addGlobalParam = function(id, param){
 // ParamStr //////////////////////////////
 
 exp.ParamStr = class extends exp.Param {
-	getAsDbVal(){
+	getAsDbVal() {
 		return this.getAsJsonable()
 	}
-	setFromDbVal(val){
+	setFromDbVal(val) {
 		this.setFromJsonable(val)
 	}
-	getViewer(){
-		return { tag:"msa-params-str-viewer" }
+	getViewer() {
+		return { tag: "msa-params-str-viewer" }
 	}
-	getEditor(){
-		return { tag:"msa-params-str-editor" }
+	getEditor() {
+		return { tag: "msa-params-str-editor" }
 	}
 }
 
@@ -133,8 +133,8 @@ exp.ParamStr = class extends exp.Param {
 
 const isArr = Array.isArray
 
-function splitId(id){
-	if(isArr(id)) return id
-	if(!id) return []
+function splitId(id) {
+	if (isArr(id)) return id
+	if (!id) return []
 	return id.split('.')
 }

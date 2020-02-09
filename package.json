@@ -1,6 +1,6 @@
 {
   "name": "@mysimpleapp/msa-params",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "MySimpleApp core module managing modules parameters",
   "main": "index.js",
   "scripts": {
