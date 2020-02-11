@@ -11,33 +11,18 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		this.initApp()
 	}
 
-	async getCtxRootParam(ctx) {
-		let res = ctx.rootParam
-		if (!res) res = ctx.rootParam = await this.getRootParam(ctx)
-		return res
-	}
-
 	async getRootParam(ctx) {
 		return globalParams
 	}
 
-	async getCtxParam(ctx) {
-		let res = ctx.param
-		if (!res) {
-			const rootParam = await this.getCtxRootParam(ctx)
-			res = ctx.param = getParamById(rootParam, ctx.id)
-		}
-		return res
-	}
-
-	async updateParam(ctx, val) {
-		const param = await this.getCtxParam(ctx)
+	async updateParam(ctx, rootParam, id, val) {
+		const param = getParamById(rootParam, id)
 		param.setFromJsonable(val)
-		await this.updateParamInDb(ctx)
+		await this.updateParamInDb(ctx, rootParam, id, param)
 	}
 
-	async updateParamInDb(ctx) {
-		const fields = { id: ctx.id, value: ctx.param.getAsDbVal() }
+	async updateParamInDb(ctx, rootParam, id, param) {
+		const fields = { id, value: param.getAsDbVal() }
 		const res = await ctx.db.run("UPDATE msa_params SET value=:value WHERE id=:id", fields)
 		if (res.nbChanges === 0)
 			await ctx.db.run("INSERT INTO msa_params (id, value) VALUES (:id,:value)", fields)
@@ -65,8 +50,9 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		this.app.post('/', (req, res, next) => {
 			withDb(async db => {
 				const { id, value } = req.body
-				const ctx = { req, db, id }
-				await this.updateParam(ctx, value)
+				const ctx = newCtx(req, { db })
+				const rootParam = await this.getRootParam(ctx)
+				await this.updateParam(ctx, rootParam, id, value)
 				res.sendStatus(200)
 			}).catch(next)
 		})
@@ -74,8 +60,9 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 
 	listMdw(id, req, res, next) {
 		withDb(async db => {
-			const ctx = { req, db, id }
-			const param = await this.getCtxParam(ctx)
+			const ctx = newCtx(req, { db })
+			const rootParam = await this.getRootParam(ctx)
+			const param = getParamById(rootParam, id)
 			const list = []
 			for (let key in param) {
 				let value = null, isParams = false, viewer = null, editor = null
@@ -104,6 +91,12 @@ msaAdmin.register({
 })
 
 // utils
+
+function newCtx(req, kwargs) {
+	const ctx = Object.create(req)
+	Object.assign(ctx, kwargs)
+	return ctx
+}
 
 function urlToId(url) {
 	return url.replace(/^\//, '')
