@@ -15,19 +15,6 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 		return globalParams
 	}
 
-	async updateParam(ctx, rootParam, id, val) {
-		const param = getParamById(rootParam, id)
-		param.setFromJsonable(val)
-		await this.updateParamInDb(ctx, rootParam, id, param)
-	}
-
-	async updateParamInDb(ctx, rootParam, id, param) {
-		const fields = { id, value: param.getAsDbVal() }
-		const res = await ctx.db.run("UPDATE msa_params SET value=:value WHERE id=:id", fields)
-		if (res.nbChanges === 0)
-			await ctx.db.run("INSERT INTO msa_params (id, value) VALUES (:id,:value)", fields)
-	}
-
 	syncUrl() {
 		return true
 	}
@@ -49,10 +36,8 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 
 		this.app.post('/', (req, res, next) => {
 			withDb(async db => {
-				const { id, value } = req.body
 				const ctx = newCtx(req, { db })
-				const rootParam = await this.getRootParam(ctx)
-				await this.updateParam(ctx, rootParam, id, value)
+				await this.updateParams(ctx, req.body.data)
 				res.sendStatus(200)
 			}).catch(next)
 		})
@@ -69,7 +54,7 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 				const childParam = param[key]
 				const isChildParamDict = (childParam instanceof ParamDict)
 				if (!isChildParamDict) {
-					value = childParam.getAsJsonable()
+					value = childParam.getAsAdminVal()
 					viewer = childParam.getViewer()
 					editor = childParam.getEditor()
 				}
@@ -77,6 +62,22 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 			}
 			res.json(list)
 		}).catch(next)
+	}
+
+	async updateParams(ctx, data) {
+		const rootParam = await this.getRootParam(ctx)
+		for (let id in data) {
+			const param = getParamById(rootParam, id)
+			param.setFromAdminVal(data[id])
+			await this.updateParamInDb(ctx, id, param.getAsDbStr())
+		}
+	}
+
+	async updateParamInDb(ctx, id, dbStr) {
+		const fields = { id, value: dbStr }
+		const res = await ctx.db.run("UPDATE msa_params SET value=:value WHERE id=:id", fields)
+		if (res.nbChanges === 0)
+			await ctx.db.run("INSERT INTO msa_params (id, value) VALUES (:id,:value)", fields)
 	}
 }
 
@@ -89,6 +90,49 @@ msaAdmin.register({
 	title: "Params",
 	help: "Manage all the website parameters."
 })
+
+// MsaParamsLocalAdminModule
+
+exp.MsaParamsLocalAdminModule = class extends exp.MsaParamsAdminModule {
+
+	constructor() {
+		super()
+		this.ParamDict = this.getParamDictClass()
+	}
+
+	getParamDictClass() {
+		return ParamDict
+	}
+
+	async getRootParam(ctx) {
+		const dbStr = await this.selectRootParamFromDb(ctx)
+		return this.ParamDict.newFromDbStr(dbStr)
+	}
+
+	async updateParams(ctx, data) {
+		const dbStr = await this.selectRootParamFromDb(ctx)
+		const rootParam = this.ParamDict.newFromDbStr(dbStr)
+		const dbVal = this.ParamDict.parseDbStr(dbStr) || {}
+		for (let id in data) {
+			const param = getParamById(rootParam, id)
+			param.setFromAdminVal(data[id])
+			const paramDbVal = param.getAsDbVal()
+			this.ParamDict.updateDbVal(dbVal, id, paramDbVal)
+		}
+		const newDbStr = this.ParamDict.formatDbVal(dbVal)
+		await this.updateRootParamInDb(ctx, newDbStr)
+	}
+
+	async selectRootParamFromDb(ctx) {
+		throw Error("Not implemented")
+	}
+
+	async updateRootParamInDb(ctx, dbStr) {
+		throw Error("Not implemented")
+	}
+
+	updateParamInDb() { }
+}
 
 // utils
 

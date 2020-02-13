@@ -36,7 +36,7 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		this.listParams(this.paramsId)
 	}
 
-	initAttrs(){
+	initAttrs() {
 		this.paramsId = defAttr(this, "params-id", "")
 		this.baseUrl = defAttr(this, "base-url", "/admin/params")
 		this.syncUrl = defAttrAsBool(this, "sync-url", "false")
@@ -53,19 +53,19 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 	async sync() {
 		const t = this.Q("table.params tbody")
 		t.innerHTML = ""
-		for(let param of this.params){
+		for (let param of this.params) {
 			const r = t.insertRow()
 			r.param = param
 			r.insertCell().textContent = param.key
 			const valTd = r.insertCell()
-			if(param.viewer){
+			if (param.viewer) {
 				const viewer = (await importHtml(param.viewer, valTd))[0]
 				viewer.classList.add("viewer")
 				viewer.setValue(param.value)
 			}
 			const buttonsCell = r.insertCell()
-			if(param.editable) this.makeParamEditable(r, buttonsCell)
-			if(param.isParams) this.makeParamsListable(r, buttonsCell)
+			if (param.editable) this.makeParamEditable(r, buttonsCell)
+			if (param.isParams) this.makeParamsListable(r, buttonsCell)
 		}
 	}
 
@@ -76,14 +76,14 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		btn.onclick = async () => {
 			const param = row.param
 			let editor = param.editor
-			if(!editor) editor = "text"
+			if (!editor) editor = "text"
 			const editorEl = (await importHtml(editor, true))[0]
 			const { addInputPopup } = await import(popupSrc)
 			const popup = addInputPopup(this, editorEl)
 			setElValue(editorEl, param.value)
 			popup.then(val => {
 				row.querySelector(".viewer").setValue(val)
-				this.updatedParams.push({ param, value:val })
+				this.updatedParams.push({ param, value: val })
 				row.classList.add('updated')
 			})
 		}
@@ -95,8 +95,8 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 		cell.appendChild(btn)
 		btn.onclick = () => {
 			const paramKey = row.param.key
-			if(this.syncUrl)
-				window.location += '/'+paramKey
+			if (this.syncUrl)
+				window.location += '/' + paramKey
 			else {
 				const newParamsId = this.paramsId ? `${this.paramsId}.${paramKey}` : paramKey
 				this.listParams(newParamsId)
@@ -106,40 +106,41 @@ export class HTMLMsaParamsAdminElement extends HTMLElement {
 
 	listParams(id) {
 		ajax('GET', `${this.baseUrl}/_list/${id}`)
-		.then(params => {
-			this.paramsId = id
-			this.params = params
-			this.sync()
-		})
+			.then(params => {
+				this.paramsId = id
+				this.params = params
+				this.sync()
+			})
 	}
 
 	updateParams() {
-		for(let u of this.updatedParams){
+		const data = {}
+		for (let u of this.updatedParams) {
 			const paramKey = u.param.key
 			const paramId = this.paramsId ? `${this.paramsId}.${paramKey}` : paramKey
-			ajax('POST', this.baseUrl, { body: {
-				id: paramId,
-				value: u.value
-			}})
-			.then(() => location.reload())
+			data[paramId] = u.value
 		}
+		ajax('POST', this.baseUrl, {
+			body: { data }
+		})
+			.then(() => location.reload())
 	}
 }
 
 
 // utils
 
-function defAttr(el, key, defVal){
+function defAttr(el, key, defVal) {
 	return el.hasAttribute(key) ? el.getAttribute(key) : defVal
 }
 
-function defAttrAsBool(el, key, defVal){
+function defAttrAsBool(el, key, defVal) {
 	const val = defAttr(el, key, defVal)
 	return val == "true"
 }
 
-function setElValue(el, val){
-	if(el.setValue) el.setValue(val)
+function setElValue(el, val) {
+	if (el.setValue) el.setValue(val)
 	else el.value = val
 }
 /*
@@ -168,37 +169,45 @@ importHtml(`<style>
 
 
 export class HTMLMsaParamsViewerElement extends HTMLElement {
-	setValue(val){
+	setValue(val) {
 		this.textContent = JSON.stringify(val)
 	}
 }
 customElements.define("msa-params-viewer", HTMLMsaParamsViewerElement)
 
 
+export class HTMLMsaParamsBoolViewerElement extends HTMLElement {
+	setValue(val) {
+		this.textContent = val ? "yes" : "no"
+	}
+}
+customElements.define("msa-params-bool-viewer", HTMLMsaParamsBoolViewerElement)
+
+
 export class HTMLMsaParamsStrViewerElement extends HTMLElement {
-	setValue(val){
+	setValue(val) {
 		this.textContent = val
 	}
 }
 customElements.define("msa-params-str-viewer", HTMLMsaParamsStrViewerElement)
 
 
-// msa-params-viewer
+// msa-params-editor
 
 const editorTemplate = `
 	<input type="text">`
 
 export class HTMLMsaParamsEditorElement extends HTMLElement {
-	getTemplate(){
+	getTemplate() {
 		return editorTemplate
 	}
-	connectedCallback(){
+	connectedCallback() {
 		this.innerHTML = this.getTemplate()
 	}
-	getValue(){
+	getValue() {
 		return JSON.parse(this.querySelector("input").value)
 	}
-	setValue(val){
+	setValue(val) {
 		this.querySelector("input").value = JSON.stringify(val)
 	}
 }
@@ -206,11 +215,28 @@ customElements.define("msa-params-editor", HTMLMsaParamsEditorElement)
 
 
 export class HTMLMsaParamsStrEditorElement extends HTMLMsaParamsEditorElement {
-	getValue(){
+	getValue() {
 		return this.querySelector("input").value
 	}
-	setValue(val){
+	setValue(val) {
 		this.querySelector("input").value = val
 	}
 }
 customElements.define("msa-params-str-editor", HTMLMsaParamsStrEditorElement)
+
+
+const editorBoolTemplate = `
+	<input type="checkbox">`
+
+export class HTMLMsaParamsBoolEditorElement extends HTMLMsaParamsEditorElement {
+	getTemplate() {
+		return editorBoolTemplate
+	}
+	getValue() {
+		return this.querySelector("input").checked
+	}
+	setValue(val) {
+		this.querySelector("input").checked = val
+	}
+}
+customElements.define("msa-params-bool-editor", HTMLMsaParamsBoolEditorElement)
