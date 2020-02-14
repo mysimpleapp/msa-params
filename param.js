@@ -15,22 +15,15 @@ exp.Param = class {
 	setFromDbVal(dbVal) {
 		this.value = dbVal
 	}
-	static parseDbStr(dbStr) {
-		if (dbStr === undefined || dbStr === null)
-			return undefined
-		return JSON.parse(dbStr)
-	}
-	static formatDbVal(dbVal) {
-		if (dbVal === undefined || dbVal === null)
-			return undefined
-		return JSON.stringify(dbVal)
-	}
 	getAsDbStr() {
 		const dbVal = this.getAsDbVal()
-		return this.constructor.formatDbVal(dbVal)
+		if (dbVal !== undefined && dbVal !== null)
+			return JSON.stringify(dbVal)
 	}
 	setFromDbStr(dbStr) {
-		const dbVal = this.constructor.parseDbStr(dbStr)
+		let dbVal
+		if (dbStr !== undefined && dbStr !== null)
+			dbVal = JSON.parse(dbStr)
 		this.setFromDbVal(dbVal)
 	}
 	static newFromDbStr(dbStr) {
@@ -55,27 +48,17 @@ exp.Param = class {
 
 
 exp.ParamDict = class {
-	getAsAdminVal() {
+	getAsDbVal() {
 		const res = {}
-		for (let k in this)
-			res[k] = this[k].getAsAdminVal()
-		return res
-	}
-	static updateDbVal(obj, id, val) {
-		const keys = splitId(id)
-		const lastKey = keys.pop()
-		const lastParamsObj = initObjsById(obj, keys)
-		lastParamsObj[lastKey] = val
-	}
-	static parseDbStr(dbStr) {
-		if (dbStr === undefined || dbStr === null)
-			return undefined
-		return JSON.parse(dbStr)
-	}
-	static formatDbVal(dbVal) {
-		if (dbVal === undefined || dbVal === null)
-			return undefined
-		return JSON.stringify(dbVal)
+		let hasVal = false
+		for (let k in this) {
+			const v = this[k].getAsDbVal()
+			if (v === undefined || v === null)
+				continue
+			res[k] = v
+			hasVal = true
+		}
+		return hasVal ? res : null
 	}
 	setFromDbVal(dbVal) {
 		for (let k in this) {
@@ -83,13 +66,26 @@ exp.ParamDict = class {
 			this[k].setFromDbVal(v)
 		}
 	}
+	getAsDbStr() {
+		const dbVal = this.getAsDbVal()
+		if (dbVal !== undefined && dbVal !== null)
+			return JSON.stringify(dbVal)
+	}
 	setFromDbStr(dbStr) {
-		const dbVal = this.constructor.parseDbStr(dbStr)
+		let dbVal
+		if (dbStr !== undefined && dbStr !== null)
+			dbVal = JSON.parse(dbStr)
 		this.setFromDbVal(dbVal)
 	}
 	static newFromDbStr(dbStr) {
 		const res = new this()
 		res.setFromDbStr(dbStr)
+		return res
+	}
+	getAsAdminVal() {
+		const res = {}
+		for (let k in this)
+			res[k] = this[k].getAsAdminVal()
 		return res
 	}
 	getDescription() { }
@@ -106,18 +102,6 @@ const getParamById = exp.getParamById = function (rootParam, id) {
 	for (let key of keys)
 		param = param[key]
 	return param
-}
-
-
-function initObjsById(obj, id) {
-	const keys = splitId(id)
-	for (let key of keys) {
-		const p = obj[key]
-		if (p === undefined)
-			p = obj[key] = {}
-		obj = p
-	}
-	return obj
 }
 
 
@@ -165,11 +149,11 @@ exp.ParamStr = class extends exp.Param {
 	constructor(defVal) {
 		super(defVal ? defVal : "")
 	}
-	static parseDbStr(dbStr) {
-		return dbStr
+	getAsDbStr() {
+		return this.getAsDbVal()
 	}
-	static formatDbVal(dbVal) {
-		return dbVal
+	setFromDbStr(dbStr) {
+		this.setFromDbVal(dbStr)
 	}
 	getViewer() {
 		return { tag: "msa-params-str-viewer" }

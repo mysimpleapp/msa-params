@@ -104,30 +104,20 @@ exp.MsaParamsLocalAdminModule = class extends exp.MsaParamsAdminModule {
 		return ParamDict
 	}
 
-	async getRootParam(ctx) {
-		const dbStr = await this.selectRootParamFromDb(ctx)
-		return this.ParamDict.newFromDbStr(dbStr)
-	}
-
 	async updateParams(ctx, data) {
-		const dbStr = await this.selectRootParamFromDb(ctx)
-		const rootParam = this.ParamDict.newFromDbStr(dbStr)
-		const dbVal = this.ParamDict.parseDbStr(dbStr) || {}
+		const rootParam = await this.getRootParam(ctx)
 		for (let id in data) {
 			const param = getParamById(rootParam, id)
 			param.setFromAdminVal(data[id])
-			const paramDbVal = param.getAsDbVal()
-			this.ParamDict.updateDbVal(dbVal, id, paramDbVal)
 		}
-		const newDbStr = this.ParamDict.formatDbVal(dbVal)
-		await this.updateRootParamInDb(ctx, newDbStr)
+		await this.updateRootParam(ctx, rootParam)
 	}
 
-	async selectRootParamFromDb(ctx) {
+	async getRootParam(ctx) {
 		throw Error("Not implemented")
 	}
 
-	async updateRootParamInDb(ctx, dbStr) {
+	async updateRootParam(ctx, rootParam) {
 		throw Error("Not implemented")
 	}
 
