@@ -1,10 +1,6 @@
 const { ParamDict, globalParams, getParamById } = require("./param")
-const { withDb } = Msa.require("db")
-const msaAdmin = Msa.require("admin")
 
-const exp = module.exports = {}
-
-exp.MsaParamsAdminModule = class extends Msa.Module {
+class MsaParamsAdminModule extends Msa.Module {
 
 	constructor() {
 		super()
@@ -81,19 +77,9 @@ exp.MsaParamsAdminModule = class extends Msa.Module {
 	}
 }
 
-
-const msaAdminParams = new exp.MsaParamsAdminModule()
-
-msaAdmin.register({
-	route: '/params',
-	app: msaAdminParams.app,
-	title: "Params",
-	help: "Manage all the website parameters."
-})
-
 // MsaParamsLocalAdminModule
 
-exp.MsaParamsLocalAdminModule = class extends exp.MsaParamsAdminModule {
+class MsaParamsLocalAdminModule extends MsaParamsAdminModule {
 
 	constructor() {
 		super()
@@ -137,3 +123,26 @@ function urlToId(url) {
 		.replace(/\/$/, '')
 		.replace(/\/+/g, '.')
 }
+
+// exports
+
+module.exports = {
+	MsaParamsAdminModule,
+	MsaParamsLocalAdminModule
+}
+
+// imports
+
+const { withDb } = Msa.require("db")
+const { registerAdminPanel } = Msa.require("admin")
+
+// register admin panel
+
+const msaAdminParams = new MsaParamsAdminModule()
+
+registerAdminPanel({
+	route: '/params',
+	app: msaAdminParams.app,
+	title: "Params",
+	help: "Manage all the website parameters."
+})

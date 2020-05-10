@@ -1,6 +1,4 @@
-const exp = module.exports = {}
-
-exp.Param = class {
+class Param {
 	constructor(defVal) {
 		this.defaultValue = defVal
 	}
@@ -47,7 +45,7 @@ exp.Param = class {
 }
 
 
-exp.ParamDict = class {
+class ParamDict {
 	getAsDbVal() {
 		const res = {}
 		let hasVal = false
@@ -92,11 +90,11 @@ exp.ParamDict = class {
 }
 
 
-exp.globalParams = {}
-exp.globalParamDefs = new exp.ParamDict()
+const globalParams = {}
+const globalParamDefs = new ParamDict()
 
 
-const getParamById = exp.getParamById = function (rootParam, id) {
+function getParamById(rootParam, id) {
 	const keys = splitId(id)
 	let param = rootParam
 	for (let key of keys)
@@ -105,12 +103,11 @@ const getParamById = exp.getParamById = function (rootParam, id) {
 }
 
 
-exp.addGlobalParam = function (id, param) {
+function addGlobalParam(id, param) {
 	if (typeof param === "function")
 		param = new param()
 	const keys = splitId(id)
 	const lastKey = keys.pop()
-	const globalParams = exp.globalParams
 	const parent = getParamById(globalParams, keys)
 	parent[lastKey] = param
 	const dbStrs = Msa.msaParamsStartDbStrs
@@ -130,7 +127,7 @@ exp.addGlobalParam = function (id, param) {
 
 // ParamBool //////////////////////////////
 
-exp.ParamBool = class extends exp.Param {
+class ParamBool extends Param {
 	constructor(defVal) {
 		super(defVal === true)
 	}
@@ -145,7 +142,7 @@ exp.ParamBool = class extends exp.Param {
 
 // ParamStr //////////////////////////////
 
-exp.ParamStr = class extends exp.Param {
+class ParamStr extends Param {
 	constructor(defVal) {
 		super(defVal ? defVal : "")
 	}
@@ -172,4 +169,17 @@ function splitId(id) {
 	if (isArr(id)) return id
 	if (!id) return []
 	return id.split('.')
+}
+
+// export
+
+module.exports = {
+	Param,
+	ParamDict,
+	globalParams,
+	globalParamDefs,
+	getParamById,
+	addGlobalParam,
+	ParamBool,
+	ParamStr
 }
