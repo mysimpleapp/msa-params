@@ -13,20 +13,9 @@ class Param {
 	setFromDbVal(dbVal) {
 		this.value = dbVal
 	}
-	getAsDbStr() {
-		const dbVal = this.getAsDbVal()
-		if (dbVal !== undefined && dbVal !== null)
-			return JSON.stringify(dbVal)
-	}
-	setFromDbStr(dbStr) {
-		let dbVal
-		if (dbStr !== undefined && dbStr !== null)
-			dbVal = JSON.parse(dbStr)
-		this.setFromDbVal(dbVal)
-	}
-	static newFromDbStr(dbStr) {
+	static newFromDbVal(dbVal) {
 		const res = new this()
-		res.setFromDbStr(dbStr)
+		res.setFromDbVal(dbVal)
 		return res
 	}
 	getAsAdminVal() {
@@ -64,20 +53,9 @@ class ParamDict {
 			this[k].setFromDbVal(v)
 		}
 	}
-	getAsDbStr() {
-		const dbVal = this.getAsDbVal()
-		if (dbVal !== undefined && dbVal !== null)
-			return JSON.stringify(dbVal)
-	}
-	setFromDbStr(dbStr) {
-		let dbVal
-		if (dbStr !== undefined && dbStr !== null)
-			dbVal = JSON.parse(dbStr)
-		this.setFromDbVal(dbVal)
-	}
-	static newFromDbStr(dbStr) {
+	static newFromDbVal(dbVal) {
 		const res = new this()
-		res.setFromDbStr(dbStr)
+		res.setFromDbVal(dbVal)
 		return res
 	}
 	getAsAdminVal() {
@@ -110,18 +88,18 @@ function addGlobalParam(id, param) {
 	const lastKey = keys.pop()
 	const parent = getParamById(globalParams, keys)
 	parent[lastKey] = param
-	const dbStrs = Msa.msaParamsStartDbStrs
-	const applyParamStartDbStr = id => {
+	const dbVals = Msa.msaParamsStartDbVals
+	const applyParamStartDbVal = id => {
 		const param = getParamById(globalParams, id)
-		const dbStr = dbStrs[id]
-		param.setFromDbStr(dbStr)
+		const dbVal = dbVals[id]
+		param.setFromDbVal(dbVal)
 	}
-	if (id in dbStrs)
-		applyParamStartDbStr(id)
+	if (id in dbVals)
+		applyParamStartDbVal(id)
 	const idd = `${id}.`
-	for (let id2 in dbStrs)
+	for (let id2 in dbVals)
 		if (id2.startsWith(idd))
-			applyParamStartDbStr(id2)
+			applyParamStartDbVal(id2)
 }
 
 
@@ -145,12 +123,6 @@ class ParamBool extends Param {
 class ParamStr extends Param {
 	constructor(defVal) {
 		super(defVal ? defVal : "")
-	}
-	getAsDbStr() {
-		return this.getAsDbVal()
-	}
-	setFromDbStr(dbStr) {
-		this.setFromDbVal(dbStr)
 	}
 	getViewer() {
 		return { tag: "msa-params-str-viewer" }

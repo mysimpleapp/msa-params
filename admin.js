@@ -7,7 +7,7 @@ class MsaParamsAdminModule extends Msa.Module {
 		this.initApp()
 	}
 
-	async getRootParam(ctx) {
+	async getRootParam(req) {
 		return globalParams
 	}
 
@@ -30,19 +30,17 @@ class MsaParamsAdminModule extends Msa.Module {
 			})
 		})
 
-		this.app.post('/', (req, res, next) => {
-			withDb(async db => {
-				const ctx = newCtx(req, { db })
-				await this.updateParams(ctx, req.body.data)
+		this.app.post('/', async (req, res, next) => {
+			try {
+				await this.updateParams(req, req.body.data)
 				res.sendStatus(200)
-			}).catch(next)
+			} catch(err) { next(err) }
 		})
 	}
 
-	listMdw(id, req, res, next) {
-		withDb(async db => {
-			const ctx = newCtx(req, { db })
-			const rootParam = await this.getRootParam(ctx)
+	async listMdw(id, req, res, next) {
+		try {
+			const rootParam = await this.getRootParam(req)
 			const param = getParamById(rootParam, id)
 			const list = []
 			for (let key in param) {
@@ -57,23 +55,20 @@ class MsaParamsAdminModule extends Msa.Module {
 				list.push({ key, value, isParams: isChildParamDict, editable: (!isChildParamDict), viewer, editor })
 			}
 			res.json(list)
-		}).catch(next)
+		} catch(err) { next(err) }
 	}
 
-	async updateParams(ctx, data) {
-		const rootParam = await this.getRootParam(ctx)
+	async updateParams(req, data) {
+		const rootParam = await this.getRootParam(req)
 		for (let id in data) {
 			const param = getParamById(rootParam, id)
 			param.setFromAdminVal(data[id])
-			await this.updateParamInDb(ctx, id, param.getAsDbStr())
+			await this.updateParamInDb(id, param.getAsDbVal())
 		}
 	}
 
-	async updateParamInDb(ctx, id, dbStr) {
-		const fields = { id, value: dbStr }
-		const res = await ctx.db.run("UPDATE msa_params SET value=:value WHERE id=:id", fields)
-		if (res.nbChanges === 0)
-			await ctx.db.run("INSERT INTO msa_params (id, value) VALUES (:id,:value)", fields)
+	async updateParamInDb(id, dbVal) {
+		await db.collection("msa_params").updateOne({ _id:id }, { $set: { value: dbVal }}, { upsert:true })
 	}
 }
 
@@ -90,20 +85,20 @@ class MsaParamsLocalAdminModule extends MsaParamsAdminModule {
 		return ParamDict
 	}
 
-	async updateParams(ctx, data) {
-		const rootParam = await this.getRootParam(ctx)
+	async updateParams(req, data) {
+		const rootParam = await this.getRootParam(req)
 		for (let id in data) {
 			const param = getParamById(rootParam, id)
 			param.setFromAdminVal(data[id])
 		}
-		await this.updateRootParam(ctx, rootParam)
+		await this.updateRootParam(req, rootParam)
 	}
 
-	async getRootParam(ctx) {
+	async getRootParam(req) {
 		throw Error("Not implemented")
 	}
 
-	async updateRootParam(ctx, rootParam) {
+	async updateRootParam(req, rootParam) {
 		throw Error("Not implemented")
 	}
 
@@ -111,12 +106,6 @@ class MsaParamsLocalAdminModule extends MsaParamsAdminModule {
 }
 
 // utils
-
-function newCtx(req, kwargs) {
-	const ctx = Object.create(req)
-	Object.assign(ctx, kwargs)
-	return ctx
-}
 
 function urlToId(url) {
 	return url.replace(/^\//, '')
@@ -133,7 +122,7 @@ module.exports = {
 
 // imports
 
-const { withDb } = Msa.require("db")
+const { db } = Msa.require("db")
 const { registerAdminPanel } = Msa.require("admin")
 
 // register admin panel
