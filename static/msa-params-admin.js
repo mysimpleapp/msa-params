@@ -1,6 +1,6 @@
-import { Q, importHtml, importOnCall, ajax } from "/utils/msa-utils.js"
+import { Q, importHtml, importOnCall, ajax } from "/msa/utils/msa-utils.js"
 
-const popupSrc = "/utils/msa-utils-popup.js"
+const popupSrc = "/msa/utils/msa-utils-popup.js"
 
 
 importHtml(`<style>

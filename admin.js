@@ -22,7 +22,7 @@ class MsaParamsAdminModule extends Msa.Module {
 		this.app.get('*', (req, res, next) => {
 			const id = urlToId(req.params[0])
 			res.sendPage({
-				wel: '/params/msa-params-admin.js',
+				wel: '/msa/params/msa-params-admin.js',
 				attrs: {
 					"params-id": id,
 					"sync-url": this.syncUrl()
